@@ -62,6 +62,33 @@ $$('.tab').forEach((tab) => {
 
 // ---- Jobs ----
 let jobsAll = [];
+const CATEGORY_ORDER = ['animal', 'government', 'warehouse', 'retail', 'general'];
+
+// Sorting purely by score lets whichever category has the most postings
+// (usually animal care) flood the top of the list. This keeps quality
+// (each group is still score-sorted) but mixes categories so a good variety
+// shows up without having to touch a filter.
+function interleaveByCategory(jobs) {
+  const groups = Object.fromEntries(CATEGORY_ORDER.map((c) => [c, []]));
+  for (const job of jobs) {
+    const cat = categoryFor(job);
+    (groups[cat] || groups.general).push(job);
+  }
+  for (const cat of CATEGORY_ORDER) groups[cat].sort((a, b) => b.score - a.score);
+
+  const mixed = [];
+  let added = true;
+  while (added) {
+    added = false;
+    for (const cat of CATEGORY_ORDER) {
+      if (groups[cat].length) {
+        mixed.push(groups[cat].shift());
+        added = true;
+      }
+    }
+  }
+  return mixed;
+}
 
 function renderJobs() {
   const catFilter = $('#filter-category').value;
@@ -83,6 +110,8 @@ function renderJobs() {
     jobs.sort((a, b) => (b.salary_max || b.salary_min || 0) - (a.salary_max || a.salary_min || 0));
   } else if (sort === 'new') {
     jobs.sort((a, b) => new Date(b.fetched_at) - new Date(a.fetched_at));
+  } else {
+    jobs = interleaveByCategory(jobs);
   }
 
   const list = $('#jobs-list');

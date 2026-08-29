@@ -78,7 +78,13 @@ export function suggestResumeCategory(title: string, description: string): strin
   if (/(recreation assistant|activities? assistant|senior affairs|community service|city of|county|assisted living)/.test(text)) {
     return 'government';
   }
-  if (/(warehouse|fulfillment|shipping|receiving clerk|distribution center)/.test(text)) return 'warehouse';
+  if (
+    /(warehouse|fulfillment|shipping|receiving clerk|distribution center|janitorial|custodian|dishwasher|car wash|groundskeep|landscap|laundry attendant|hotel housekeep|basic assembly|assembly line|packaging associate|delivery driver|parking (lot )?attendant|gate attendant|picker|loading and unloading)/.test(
+      text
+    )
+  ) {
+    return 'warehouse';
+  }
   if (/(stock|retail|store associate|merchandis)/.test(text)) return 'retail';
   return 'general';
 }

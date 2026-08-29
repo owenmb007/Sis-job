@@ -38,6 +38,19 @@ const SEARCH_TERMS = [
   'library page',
   'custodian',
   'housekeeping',
+  // simple/entry-level physical labor (no experience, low complexity)
+  'shelf stocker',
+  'janitorial',
+  'dishwasher',
+  'car wash attendant',
+  'groundskeeper',
+  'landscaping laborer',
+  'laundry attendant',
+  'hotel housekeeper',
+  'basic assembly',
+  'packaging associate',
+  'delivery driver entry level',
+  'entry level no experience',
 ];
 
 /**

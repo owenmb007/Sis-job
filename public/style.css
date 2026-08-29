@@ -267,9 +267,10 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--purple);
 }
 
-textarea { min-height: 3.2rem; resize: vertical; }
+textarea { min-height: 3.2rem; resize: vertical; width: 100%; }
 
 label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+label textarea, label input, label select { width: 100%; }
 
 #refresh-status {
   color: var(--muted);
@@ -302,4 +303,25 @@ label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.95rem;
   background: var(--card);
   border: 2px dashed var(--border);
   border-radius: 22px;
+}
+
+/* Same look everywhere — this just reflows for narrow screens and makes
+   buttons full-width so they're easy to tap. */
+@media (max-width: 520px) {
+  body { font-size: 16px; }
+  header { padding: 1.4rem 1.1rem 1rem; }
+  header h1 { font-size: 1.35rem; }
+  .brand-mark { font-size: 2rem; }
+  main { padding: 0.85rem 1rem 2.5rem; }
+  .card, form { padding: 1.05rem 1.1rem; }
+  .filter-bar { flex-direction: column; }
+  .filter-bar select { width: 100%; }
+  .card-actions { flex-direction: column; align-items: stretch; }
+  .card-actions button,
+  .card-actions .btn-primary,
+  .card-actions a.link-btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
 }
