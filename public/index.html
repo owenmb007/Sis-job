@@ -6,70 +6,58 @@
   <title>Camrynn Job Search Buddy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div class="grid-bg"></div>
   <header>
     <div class="brand">
-      <span class="brand-mark">◆</span>
+      <span class="brand-mark">🐾</span>
       <div>
-        <h1>Camrynn <span class="accent">Job Search</span> Buddy</h1>
-        <p class="tagline"><span class="mono">albuquerque_nm</span> · matches filtered for what actually fits</p>
+        <h1>Camrynn's Job Search Buddy</h1>
+        <p class="tagline">Great jobs near Albuquerque, picked just for you!</p>
       </div>
     </div>
   </header>
 
   <nav class="tabs">
-    <button data-tab="jobs" class="tab active">Job Matches</button>
-    <button data-tab="applications" class="tab">Applications</button>
-    <button data-tab="resumes" class="tab">Resumes</button>
-    <button data-tab="profile" class="tab">Preferences</button>
+    <button data-tab="jobs" class="tab active"><span class="tab-icon">🔍</span>Find Jobs</button>
+    <button data-tab="applications" class="tab"><span class="tab-icon">📋</span>My List</button>
   </nav>
 
   <main>
     <section id="jobs" class="panel active">
+      <p class="section-intro">More stars means a better fit — animals or kids, easy tasks, no handling money.</p>
       <div class="panel-header">
-        <button id="refresh-btn">Refresh job search</button>
+        <button id="refresh-btn" class="btn-primary">✨ Find new jobs</button>
         <span id="refresh-status"></span>
+      </div>
+      <div class="filter-bar">
+        <select id="filter-category">
+          <option value="all">All job types</option>
+          <option value="animal">🐾 Animal care</option>
+          <option value="government">🏛️ Community</option>
+          <option value="warehouse">📦 Warehouse</option>
+          <option value="retail">🛍️ Retail</option>
+          <option value="general">💼 General</option>
+        </select>
+        <select id="filter-rating">
+          <option value="all">Any rating</option>
+          <option value="great">🌟🌟🌟 Great matches only</option>
+          <option value="good">🌟🌟 Good matches or better</option>
+        </select>
+        <select id="filter-sort">
+          <option value="best">Sort: Best match</option>
+          <option value="pay">Sort: Highest pay</option>
+          <option value="new">Sort: Newest</option>
+        </select>
       </div>
       <div id="jobs-list" class="cards"></div>
     </section>
 
     <section id="applications" class="panel">
+      <p class="section-intro">Jobs you've picked — the right resume is already attached!</p>
       <div id="applications-list" class="cards"></div>
-    </section>
-
-    <section id="resumes" class="panel">
-      <form id="resume-form">
-        <input type="text" name="label" placeholder="Resume label (e.g. Animal Care Resume)" required />
-        <select name="category">
-          <option value="animal">Animal care</option>
-          <option value="government">Government / community service</option>
-          <option value="warehouse">Warehouse</option>
-          <option value="retail">Retail (non-cashier)</option>
-          <option value="general">General</option>
-        </select>
-        <input type="file" name="file" required />
-        <button type="submit">Upload resume</button>
-      </form>
-      <div id="resumes-list" class="cards"></div>
-    </section>
-
-    <section id="profile" class="panel">
-      <form id="profile-form">
-        <label>Name <input type="text" name="name" /></label>
-        <label>Location <input type="text" name="location" /></label>
-        <label>Search radius (miles) <input type="number" name="radius_miles" /></label>
-        <label>Exclude keywords (comma separated) <textarea name="exclude_keywords"></textarea></label>
-        <label>Cash-handling keywords (auto-excluded) <textarea name="cash_handling_keywords"></textarea></label>
-        <label>Boost keywords (animals/kids focus) <textarea name="boost_keywords"></textarea></label>
-        <label>Simple-task keywords <textarea name="simple_task_keywords"></textarea></label>
-        <label>Caution keywords (soft penalty) <textarea name="caution_keywords"></textarea></label>
-        <label>Notes <textarea name="notes"></textarea></label>
-        <button type="submit">Save preferences</button>
-      </form>
     </section>
   </main>
 

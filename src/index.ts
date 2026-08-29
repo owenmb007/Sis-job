@@ -194,8 +194,10 @@ export default {
       // ---- Applications ----
       if (pathname === '/api/applications' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
-          `SELECT applications.*, jobs.title, jobs.company, jobs.url AS job_url
-           FROM applications JOIN jobs ON jobs.id = applications.job_id
+          `SELECT applications.*, jobs.title, jobs.company, jobs.url AS job_url, resumes.label AS resume_label
+           FROM applications
+           JOIN jobs ON jobs.id = applications.job_id
+           LEFT JOIN resumes ON resumes.id = applications.resume_id
            ORDER BY applications.updated_at DESC`
         ).all();
         return json(results);

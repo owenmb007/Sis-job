@@ -2,9 +2,43 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 function fmtSalary(min, max) {
+  const fmt = (n) => Math.round(n).toLocaleString('en-US');
   if (!min && !max) return '';
-  if (min && max) return `$${Math.round(min)}–$${Math.round(max)}/yr`;
-  return `$${Math.round(min || max)}/yr`;
+  if (min && max) return `$${fmt(min)}–$${fmt(max)} a year`;
+  return `$${fmt(min || max)} a year`;
+}
+
+const CATEGORY_INFO = {
+  animal: { emoji: '🐾', label: 'Animal care' },
+  government: { emoji: '🏛️', label: 'Community' },
+  warehouse: { emoji: '📦', label: 'Warehouse' },
+  retail: { emoji: '🛍️', label: 'Retail' },
+  general: { emoji: '💼', label: 'General' },
+};
+
+let resumeCategoryById = {};
+
+function categoryFor(job) {
+  const fromResume = resumeCategoryById[job.suggested_resume_id];
+  if (fromResume) return fromResume;
+  const flags = JSON.parse(job.flags || '[]');
+  return flags.includes('animal_or_kids_focus') ? 'animal' : 'general';
+}
+
+// Rated on how well a job fits: animals/kids focus, simple/routine tasks,
+// and no cash handling (jobs that need cash handling never make it here).
+function ratingFor(score) {
+  if (score >= 10) return { tier: 'great', stars: '🌟🌟🌟', label: 'Great match' };
+  if (score >= 5) return { tier: 'good', stars: '🌟🌟', label: 'Good match' };
+  return { tier: 'ok', stars: '🌟', label: 'OK match' };
+}
+
+function friendlyBadges(flags) {
+  const badges = [];
+  if (flags.includes('animal_or_kids_focus')) badges.push({ cls: 'good', text: '🐾 Animals or kids' });
+  if (flags.includes('simple_task_role')) badges.push({ cls: 'good', text: '✅ Simple tasks' });
+  if (flags.some((f) => f.startsWith('caution:'))) badges.push({ cls: 'note', text: '👀 Worth a closer look' });
+  return badges;
 }
 
 async function api(path, opts) {
@@ -27,27 +61,56 @@ $$('.tab').forEach((tab) => {
 });
 
 // ---- Jobs ----
-let resumesCache = [];
+let jobsAll = [];
 
-async function loadJobs() {
-  const jobs = await api('/jobs');
+function renderJobs() {
+  const catFilter = $('#filter-category').value;
+  const ratingFilter = $('#filter-rating').value;
+  const sort = $('#filter-sort').value;
+
+  let jobs = jobsAll.slice();
+
+  if (catFilter !== 'all') {
+    jobs = jobs.filter((j) => categoryFor(j) === catFilter);
+  }
+  if (ratingFilter === 'great') {
+    jobs = jobs.filter((j) => ratingFor(j.score).tier === 'great');
+  } else if (ratingFilter === 'good') {
+    jobs = jobs.filter((j) => ratingFor(j.score).tier !== 'ok');
+  }
+
+  if (sort === 'pay') {
+    jobs.sort((a, b) => (b.salary_max || b.salary_min || 0) - (a.salary_max || a.salary_min || 0));
+  } else if (sort === 'new') {
+    jobs.sort((a, b) => new Date(b.fetched_at) - new Date(a.fetched_at));
+  }
+
   const list = $('#jobs-list');
   list.innerHTML = '';
   if (jobs.length === 0) {
-    list.innerHTML = '<p>No matches yet. Click "Refresh job search" to pull current openings.</p>';
+    list.innerHTML = '<div class="empty-hint">No jobs match these filters yet.<br>Try "✨ Find new jobs" or loosen a filter!</div>';
     return;
   }
   for (const job of jobs) {
     const flags = JSON.parse(job.flags || '[]');
+    const rating = ratingFor(job.score);
+    const cat = CATEGORY_INFO[categoryFor(job)] || CATEGORY_INFO.general;
+    const badges = friendlyBadges(flags);
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
-      <h3>${job.title}</h3>
-      <div class="meta">${job.company || 'Unknown employer'} · ${job.location || ''} · score ${job.score} · ${fmtSalary(job.salary_min, job.salary_max)}</div>
-      <div class="flags">${flags.map((f) => `<span class="flag ${f.startsWith('animal') || f.startsWith('simple') ? 'boost' : ''}">${f}</span>`).join('')}</div>
+      <div class="card-top">
+        <span class="card-emoji">${cat.emoji}</span>
+        <div>
+          <h3>${job.title}</h3>
+          <div class="meta">${job.company || 'Employer'} ${job.location ? '· ' + job.location : ''}</div>
+          <div class="meta">${rating.stars} ${rating.label}${job.salary_min ? ' · ' + fmtSalary(job.salary_min, job.salary_max) : ''}</div>
+        </div>
+      </div>
+      <div class="badges">${badges.map((b) => `<span class="badge ${b.cls}">${b.text}</span>`).join('')}</div>
       <div class="card-actions">
-        <a href="${job.url}" target="_blank" rel="noopener">View posting</a>
-        <button data-save="${job.id}">Save to applications</button>
+        <a class="link-btn" href="${job.url}" target="_blank" rel="noopener">👀 See the job</a>
+        <button class="btn-primary" data-save="${job.id}">💌 I like this one!</button>
       </div>
     `;
     list.appendChild(card);
@@ -59,33 +122,43 @@ async function loadJobs() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ job_id: Number(btn.dataset.save) }),
       });
-      btn.closest('.card').remove();
+      jobsAll = jobsAll.filter((j) => j.id !== Number(btn.dataset.save));
+      renderJobs();
       await loadApplications();
     });
   });
 }
 
+async function loadJobs() {
+  jobsAll = await api('/jobs');
+  renderJobs();
+}
+
+['filter-category', 'filter-rating', 'filter-sort'].forEach((id) => {
+  $(`#${id}`).addEventListener('change', renderJobs);
+});
+
 $('#refresh-btn').addEventListener('click', async () => {
   const status = $('#refresh-status');
-  status.textContent = 'Searching…';
+  status.textContent = 'Looking for jobs…';
   try {
     const result = await api('/jobs/refresh', { method: 'POST' });
-    status.textContent = `Found ${result.fetched}, ${result.matched} matched, ${result.excluded} filtered out.`;
+    status.textContent = `Found ${result.matched} jobs worth a look!`;
     await loadJobs();
   } catch (err) {
-    status.textContent = err.message;
+    status.textContent = "Couldn't search right now — try again in a bit.";
   }
 });
 
 // ---- Applications ----
 const STATUSES = ['draft', 'approved', 'applied', 'interview', 'offer', 'rejected'];
-const STATUS_LABEL = {
-  draft: 'Draft — needs review',
-  approved: 'Approved — ready to send',
-  applied: 'Applied',
-  interview: 'Interview',
-  offer: 'Offer',
-  rejected: 'Rejected',
+const STATUS_INFO = {
+  draft: { emoji: '📝', label: 'Needs a look' },
+  approved: { emoji: '👍', label: 'Ready to send' },
+  applied: { emoji: '📨', label: 'Applied!' },
+  interview: { emoji: '🎤', label: 'Interview' },
+  offer: { emoji: '🎉', label: 'Offer!' },
+  rejected: { emoji: '💛', label: 'Not this time' },
 };
 
 async function loadApplications() {
@@ -93,29 +166,27 @@ async function loadApplications() {
   const list = $('#applications-list');
   list.innerHTML = '';
   if (apps.length === 0) {
-    list.innerHTML = '<p>Nothing saved yet — save jobs from the Job Matches tab.</p>';
+    list.innerHTML = '<div class="empty-hint">Nothing picked yet.<br>Go find some jobs you like!</div>';
     return;
   }
   for (const app of apps) {
+    const info = STATUS_INFO[app.status] || STATUS_INFO.draft;
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
+      <span class="status-pill" data-status="${app.status}">${info.emoji} ${info.label}</span>
       <h3>${app.title}</h3>
-      <div class="meta"><span class="status-dot" data-status-dot="${app.status}"></span>${app.company || ''}</div>
-      <label>Application draft (edit before approving)
+      <div class="meta">${app.company || ''}${app.resume_label ? ' · 📄 ' + app.resume_label : ''}</div>
+      <label>Message to send with your application
         <textarea data-notes="${app.id}" rows="5">${app.notes || ''}</textarea>
       </label>
       <div class="card-actions">
         <select data-status="${app.id}">
-          ${STATUSES.map((s) => `<option value="${s}" ${s === app.status ? 'selected' : ''}>${STATUS_LABEL[s]}</option>`).join('')}
+          ${STATUSES.map((s) => `<option value="${s}" ${s === app.status ? 'selected' : ''}>${STATUS_INFO[s].emoji} ${STATUS_INFO[s].label}</option>`).join('')}
         </select>
-        <select data-resume="${app.id}">
-          <option value="">No resume picked</option>
-          ${resumesCache.map((r) => `<option value="${r.id}" ${r.id === app.resume_id ? 'selected' : ''}>${r.label}</option>`).join('')}
-        </select>
-        <button data-save-notes="${app.id}">Save draft</button>
-        <a href="${app.job_url}" target="_blank" rel="noopener">Open posting to apply</a>
-        <button data-remove="${app.id}">Remove (back to matches)</button>
+        <button data-save-notes="${app.id}">💾 Save changes</button>
+        <a class="link-btn" href="${app.job_url}" target="_blank" rel="noopener">👀 Open job to apply</a>
+        <button data-remove="${app.id}">↩️ Take off my list</button>
       </div>
     `;
     list.appendChild(card);
@@ -127,17 +198,10 @@ async function loadApplications() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ status: sel.value }),
       });
-      const dot = sel.closest('.card').querySelector('[data-status-dot]');
-      if (dot) dot.dataset.statusDot = sel.value;
-    });
-  });
-  list.querySelectorAll('[data-resume]').forEach((sel) => {
-    sel.addEventListener('change', async () => {
-      await api(`/applications/${sel.dataset.resume}`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ resume_id: sel.value ? Number(sel.value) : null }),
-      });
+      const pill = sel.closest('.card').querySelector('.status-pill');
+      const info = STATUS_INFO[sel.value];
+      pill.dataset.status = sel.value;
+      pill.textContent = `${info.emoji} ${info.label}`;
     });
   });
   list.querySelectorAll('[data-save-notes]').forEach((btn) => {
@@ -148,8 +212,8 @@ async function loadApplications() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ notes: textarea.value }),
       });
-      btn.textContent = 'Saved';
-      setTimeout(() => (btn.textContent = 'Save draft'), 1200);
+      btn.textContent = '✅ Saved!';
+      setTimeout(() => (btn.textContent = '💾 Save changes'), 1200);
     });
   });
   list.querySelectorAll('[data-remove]').forEach((btn) => {
@@ -160,84 +224,9 @@ async function loadApplications() {
   });
 }
 
-// ---- Resumes ----
-async function loadResumes() {
-  const resumes = await api('/resumes');
-  resumesCache = resumes;
-  const list = $('#resumes-list');
-  list.innerHTML = '';
-  for (const r of resumes) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <h3>${r.label}</h3>
-      <div class="meta">${r.category} · ${r.filename}</div>
-      <div class="card-actions">
-        <a href="/api/resumes/${r.id}/download">Download</a>
-        <button data-delete="${r.id}">Delete</button>
-      </div>
-    `;
-    list.appendChild(card);
-  }
-  list.querySelectorAll('[data-delete]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      await api(`/resumes/${btn.dataset.delete}`, { method: 'DELETE' });
-      await loadResumes();
-    });
-  });
-}
-
-$('#resume-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const form = new FormData(e.target);
-  await fetch('/api/resumes', { method: 'POST', body: form });
-  e.target.reset();
-  await loadResumes();
-});
-
-// ---- Profile ----
-async function loadProfile() {
-  const profile = await api('/profile');
-  const form = $('#profile-form');
-  form.name.value = profile.name;
-  form.location.value = profile.location;
-  form.radius_miles.value = profile.radius_miles;
-  form.exclude_keywords.value = profile.exclude_keywords.join(', ');
-  form.cash_handling_keywords.value = profile.cash_handling_keywords.join(', ');
-  form.boost_keywords.value = profile.boost_keywords.join(', ');
-  form.simple_task_keywords.value = profile.simple_task_keywords.join(', ');
-  form.caution_keywords.value = profile.caution_keywords.join(', ');
-  form.notes.value = profile.notes || '';
-}
-
-$('#profile-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const form = new FormData(e.target);
-  const toList = (key) =>
-    String(form.get(key) || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-  await api('/profile', {
-    method: 'PUT',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      name: form.get('name'),
-      location: form.get('location'),
-      radius_miles: Number(form.get('radius_miles')),
-      exclude_keywords: toList('exclude_keywords'),
-      cash_handling_keywords: toList('cash_handling_keywords'),
-      boost_keywords: toList('boost_keywords'),
-      simple_task_keywords: toList('simple_task_keywords'),
-      caution_keywords: toList('caution_keywords'),
-      notes: form.get('notes'),
-    }),
-  });
-  alert('Preferences saved.');
-});
-
 // ---- Init ----
 (async function init() {
-  await loadResumes();
-  await Promise.all([loadJobs(), loadApplications(), loadProfile()]);
+  const resumes = await api('/resumes');
+  resumeCategoryById = Object.fromEntries(resumes.map((r) => [r.id, r.category]));
+  await Promise.all([loadJobs(), loadApplications()]);
 })();
