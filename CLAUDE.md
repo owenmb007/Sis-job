@@ -20,6 +20,16 @@ assume familiarity with SQL/CLI/deploy concepts.
   - Edge Function `generate-site`: given an approved deal, calls the Claude API to write a
     genuinely unique one-page site (real creative direction per business, not a template) →
     saves HTML to `deals.site_html`.
+  - Edge Function `send-outreach`: emails a deal's contact via Resend, logs to `messages`,
+    advances `searching` → `sent`. Fails closed (refuses to send) without `MAILING_ADDRESS`
+    set, and refuses any deal marked `unsubscribed`.
+  - Edge Function `unsubscribe`: public `--no-verify-jwt` endpoint linked from every outreach
+    email footer; sets `deals.unsubscribed = true`.
+- **Live site hosting**: Cloudflare Worker `dealflow-site-server` (`workers/dealflow-site-server/`)
+  serves `deals.site_html` at `/<slug>` for any deal with `live = true`, reading through the
+  `public.live_sites` view (anon key, filtered to only 3 published columns — see
+  `supabase/migrations/0002_live_sites.sql`). Currently only reachable on the Worker's
+  `workers.dev` subdomain — no custom domain purchased.
 
 ## Hard rules — do not violate these
 1. **Nothing goes publicly live automatically.** Generating a site only saves HTML to the
@@ -34,8 +44,10 @@ assume familiarity with SQL/CLI/deploy concepts.
    Claude API call) requires a separate, explicit, confirmed action — this was a real bug
    we fixed once already; don't reintroduce it.
 4. **Secrets already live in Supabase** (`GOOGLE_PLACES_KEY`, `ANTHROPIC_API_KEY`,
-   auto-provided `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`) — never ask the owner to
-   re-paste these, never print them in logs/responses, never commit them to the repo.
+   `RESEND_API_KEY`, `MAILING_ADDRESS`, auto-provided `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`)
+   and on the `dealflow-site-server` Worker (`SUPABASE_URL`/`SUPABASE_ANON_KEY` as Worker
+   secrets, not in `wrangler.toml`) — never ask the owner to re-paste these, never print them
+   in logs/responses, never commit them to the repo.
 5. **CAN-SPAM compliance is non-negotiable** once real outreach email sending is built:
    physical address, working unsubscribe, accurate subject lines, from day one — not
    retrofitted later.
@@ -64,11 +76,19 @@ assume familiarity with SQL/CLI/deploy concepts.
   uploaded zip/folder; nested in a subfolder = silent 404 despite a "successful" deploy.
 
 ## Roadmap (not built yet)
-1. Live subdomain hosting for approved/generated sites — planned as one Cloudflare Worker
-   on a wildcard subdomain (`*.yourdomain.com`) doing dynamic lookup by hostname against
-   Supabase, rather than one Cloudflare Pages project per business (avoids project-count
-   limits and per-site redeploys). Blocked on owner purchasing a domain — do not proceed
-   without that explicit step happening first.
-2. Outreach email sending (Resend or Postmark) + inbound reply webhook feeding the Response
-   tab automatically.
-3. PWA polish (manifest + service worker) for proper home-screen install/offline support.
+1. A real custom domain for live sites — `dealflow-site-server` currently serves published
+   sites path-based (`/<slug>`) on its free `workers.dev` subdomain, not a branded
+   `*.yourdomain.com`. Moving to a real domain is blocked on the owner purchasing one — do not
+   proceed without that explicit step happening first.
+2. Inbound reply webhook feeding the Response tab automatically — outreach *sending* is built
+   (`send-outreach` via Resend); there's no inbound path yet.
+3. Verifying a sending domain in Resend — until then Resend's sandbox restriction means real
+   outreach emails only deliver to the address the Resend account itself signed up with.
+4. PWA polish (manifest + service worker) for proper home-screen install/offline support.
+
+## Known findings to keep an eye on
+- Supabase's security advisor flags `public.live_sites` as an ERROR-level
+  `security_definer_view` — expected given the design (the view intentionally bypasses RLS on
+  `deals`, but only returns 3 fixed columns for rows with `live = true`). Re-run
+  `get_advisors(type: "security")` after touching that view or the `deals` RLS policies to
+  confirm nothing broader got exposed.

@@ -1,0 +1,9 @@
+name = "dealflow-site-server"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# SUPABASE_URL and SUPABASE_ANON_KEY are already set as live secrets on this
+# Worker (see `wrangler secret list`). Do not put real values here — this
+# file is committed to the repo. To (re)set them:
+#   wrangler secret put SUPABASE_URL
+#   wrangler secret put SUPABASE_ANON_KEY
