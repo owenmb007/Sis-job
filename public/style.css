@@ -246,8 +246,8 @@ label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; 
   background: var(--muted);
   vertical-align: middle;
 }
-.status-dot[data-status-dot="saved"],
-.status-dot[data-status-dot="ready"] { background: var(--amber); box-shadow: 0 0 8px var(--amber-glow); }
+.status-dot[data-status-dot="draft"] { background: var(--amber); box-shadow: 0 0 8px var(--amber-glow); }
+.status-dot[data-status-dot="approved"],
 .status-dot[data-status-dot="applied"],
 .status-dot[data-status-dot="interview"] { background: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); }
 .status-dot[data-status-dot="offer"] { background: var(--green); box-shadow: 0 0 8px var(--green-glow); }

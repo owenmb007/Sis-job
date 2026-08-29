@@ -1,5 +1,6 @@
 import { fetchAdzunaJobs } from './lib/adzuna';
 import { scoreJob, suggestResumeCategory, type Profile } from './lib/scoring';
+import { generateCoverNote } from './lib/coverNote';
 
 export interface Env {
   DB: D1Database;
@@ -203,12 +204,34 @@ export default {
       if (pathname === '/api/applications' && request.method === 'POST') {
         const body: any = await request.json();
         if (!body.job_id) return json({ error: 'job_id required' }, { status: 400 });
+
+        const job = await env.DB.prepare('SELECT * FROM jobs WHERE id = ?').bind(body.job_id).first();
+        if (!job) return json({ error: 'job not found' }, { status: 404 });
+
+        const resumeId = body.resume_id ?? job.suggested_resume_id ?? null;
+        const resume = resumeId
+          ? await env.DB.prepare('SELECT * FROM resumes WHERE id = ?').bind(resumeId).first()
+          : null;
+
+        const profile = await getProfile(env.DB);
+        const notes =
+          body.notes ??
+          (resume
+            ? generateCoverNote({
+                applicantName: (profile as any).name,
+                jobTitle: job.title as string,
+                company: (job.company as string) || '',
+                resumeLabel: resume.label as string,
+                resumeCategory: resume.category as string,
+              })
+            : '');
+
         const result = await env.DB.prepare(
-          `INSERT INTO applications (job_id, status, resume_id, notes) VALUES (?, 'saved', ?, ?)`
+          `INSERT INTO applications (job_id, status, resume_id, notes) VALUES (?, 'draft', ?, ?)`
         )
-          .bind(body.job_id, body.resume_id ?? null, body.notes ?? '')
+          .bind(body.job_id, resumeId, notes)
           .run();
-        return json({ id: result.meta.last_row_id });
+        return json({ id: result.meta.last_row_id, notes });
       }
 
       const appPatchMatch = pathname.match(/^\/api\/applications\/(\d+)$/);

@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS profile (
   id INTEGER PRIMARY KEY CHECK (id = 1),
-  name TEXT NOT NULL DEFAULT 'Sis',
+  name TEXT NOT NULL DEFAULT 'Camrynn',
   location TEXT NOT NULL DEFAULT 'Albuquerque, NM',
   radius_miles INTEGER NOT NULL DEFAULT 15,
   exclude_keywords TEXT NOT NULL,   -- JSON array of strings
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE TABLE IF NOT EXISTS applications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   job_id INTEGER NOT NULL,
-  status TEXT NOT NULL DEFAULT 'saved', -- saved | ready | applied | interview | offer | rejected
+  status TEXT NOT NULL DEFAULT 'draft', -- draft | approved | applied | interview | offer | rejected
   resume_id INTEGER,
   notes TEXT DEFAULT '',
   applied_at TEXT,
@@ -59,7 +59,7 @@ INSERT OR IGNORE INTO profile
   (id, name, location, radius_miles, exclude_keywords, cash_handling_keywords, boost_keywords, simple_task_keywords, caution_keywords, notes)
 VALUES (
   1,
-  'Sis',
+  'Camrynn',
   'Albuquerque, NM',
   15,
   '["mcdonald","burger king","wendy''s","taco bell","kfc","popeyes","sonic drive","chick-fil-a","pizza hut","domino''s","subway","dairy queen","arby''s","jack in the box","carl''s jr","hardee''s","whataburger","chevron","shell gas","valero","circle k","7-eleven","conoco","phillips 66","speedway","gas station","fuel station","convenience store","truck stop","landfill","waste management","garbage collector","sanitation worker","recycling sorter","junkyard"]',

@@ -78,7 +78,15 @@ $('#refresh-btn').addEventListener('click', async () => {
 });
 
 // ---- Applications ----
-const STATUSES = ['saved', 'ready', 'applied', 'interview', 'offer', 'rejected'];
+const STATUSES = ['draft', 'approved', 'applied', 'interview', 'offer', 'rejected'];
+const STATUS_LABEL = {
+  draft: 'Draft — needs review',
+  approved: 'Approved — ready to send',
+  applied: 'Applied',
+  interview: 'Interview',
+  offer: 'Offer',
+  rejected: 'Rejected',
+};
 
 async function loadApplications() {
   const apps = await api('/applications');
@@ -94,14 +102,18 @@ async function loadApplications() {
     card.innerHTML = `
       <h3>${app.title}</h3>
       <div class="meta"><span class="status-dot" data-status-dot="${app.status}"></span>${app.company || ''}</div>
+      <label>Application draft (edit before approving)
+        <textarea data-notes="${app.id}" rows="5">${app.notes || ''}</textarea>
+      </label>
       <div class="card-actions">
         <select data-status="${app.id}">
-          ${STATUSES.map((s) => `<option value="${s}" ${s === app.status ? 'selected' : ''}>${s}</option>`).join('')}
+          ${STATUSES.map((s) => `<option value="${s}" ${s === app.status ? 'selected' : ''}>${STATUS_LABEL[s]}</option>`).join('')}
         </select>
         <select data-resume="${app.id}">
           <option value="">No resume picked</option>
           ${resumesCache.map((r) => `<option value="${r.id}" ${r.id === app.resume_id ? 'selected' : ''}>${r.label}</option>`).join('')}
         </select>
+        <button data-save-notes="${app.id}">Save draft</button>
         <a href="${app.job_url}" target="_blank" rel="noopener">Open posting to apply</a>
         <button data-remove="${app.id}">Remove (back to matches)</button>
       </div>
@@ -126,6 +138,18 @@ async function loadApplications() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ resume_id: sel.value ? Number(sel.value) : null }),
       });
+    });
+  });
+  list.querySelectorAll('[data-save-notes]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const textarea = btn.closest('.card').querySelector('[data-notes]');
+      await api(`/applications/${btn.dataset.saveNotes}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ notes: textarea.value }),
+      });
+      btn.textContent = 'Saved';
+      setTimeout(() => (btn.textContent = 'Save draft'), 1200);
     });
   });
   list.querySelectorAll('[data-remove]').forEach((btn) => {

@@ -1,19 +1,24 @@
-# Sis-job
+# Camrynn Job Search Buddy
 
 A small job-search tool built for one specific person: someone who can't
 handle money-related tasks or complex/multi-step instructions, prefers work
 with animals or kids but is open to anything appropriate, and should stay
 away from fast food, gas stations, and similar high-turnover manual-labor
 jobs. It searches real openings around Albuquerque, NM, filters out anything
-that doesn't fit, tracks which specialized resume goes with which job, and
-gives a simple board for tracking application status.
+that doesn't fit, auto-drafts the application content, and gives a simple
+board for reviewing and tracking status.
 
 **What this tool does *not* do:** auto-submit applications on external job
 sites. Real applications need her contact info, work history, and answers to
 screening questions — getting any of that wrong on a real submission is worse
-than not applying. Instead, the tool finds and ranks the right openings,
-suggests which resume to use, and gives a one-click link to the original
-posting so she (or you) can submit it after a quick look.
+than not applying, and most job sites' terms of service ban automated
+submissions (tripping that can get an applicant flagged or blocked, which
+actively hurts her chances). There's also no universal "submit an
+application" API — every employer's application lives on a different system.
+Instead, saving a job auto-generates a draft cover note and resume pick,
+which a person reviews/edits and marks **Approved**; the final click on the
+employer's own site still has to be a human, because that's the only
+reliable way to make sure what goes out is actually correct.
 
 ## How it works
 
@@ -23,8 +28,8 @@ posting so she (or you) can submit it after a quick look.
   - **Boosted**: animal-care and childcare-focused roles, and simple/routine job titles (assistant, aide, technician, stocker, custodian, etc.).
   - **Soft penalty**: management, sales quotas/commission, licensing/CDL requirements, bookkeeping — things that add complexity.
   - All of this is editable from the **Preferences** tab — nothing is hardcoded in a way you can't change.
-- **Resumes** — upload each specialized resume with a category (animal / childcare / retail / general); the tool suggests the best-fit resume for each job.
-- **Applications board** — save a job, move it through saved → ready → applied → interview → offer/rejected, and jump straight to the posting to apply.
+- **Resumes** — upload each specialized resume with a category (animal / government / warehouse / retail / general); the tool suggests the best-fit resume for each job.
+- **Applications board** — saving a job auto-generates a draft cover note (using her name, the job, and the matched resume) and picks the right resume, landing in **Draft — needs review**. Edit the draft, pick a different resume if needed, and move it to **Approved — ready to send** once it looks right. Then: **Applied → Interview → Offer/Rejected**. A **Remove** button un-saves a job and puts it back in Job Matches. Nothing is ever sent automatically — the posting link is there for the final manual submit.
 
 ## Setup
 
