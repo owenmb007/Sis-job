@@ -10,7 +10,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "sis-job-db"
-database_id = "REPLACE_AFTER_WRANGLER_D1_CREATE"
+database_id = "2ba196d4-c54c-4e6f-bfd3-9301fe4f14eb"
 
 [[r2_buckets]]
 binding = "RESUMES"
