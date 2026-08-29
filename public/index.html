@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dealflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0f19;
+    --bg-grid:#0e1320;
+    --panel:#10141f;
+    --panel-2:#151b28;
+    --border:#1e2534;
+    --border-bright:#2a3244;
+    --text:#e7ebf3;
+    --text-dim:#7c869c;
+    --cyan:#22e8f0;
+    --cyan-dim:#0e6b70;
+    --amber:#f5a623;
+    --amber-dim:#8a5c12;
+    --red:#ff5468;
+    --red-dim:#7a1f2b;
+    --green:#3ddc84;
+    --font-ui:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    --font-mono:'JetBrains Mono','SFMono-Regular',Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; font-family:var(--font-ui); background:var(--bg); color:var(--text);}
+  #app{
+    min-height:100vh; background:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0/28px 100%,
+      var(--bg);
+    color:var(--text); display:flex; flex-direction:column; position:relative;
+  }
+
+  /* ---- Header ---- */
+  .topbar{background:transparent; color:var(--text); padding:20px 20px 16px; position:sticky; top:0; z-index:5; backdrop-filter:blur(6px); border-bottom:1px solid var(--border);}
+  .topbar .eyebrow{font-family:var(--font-mono); font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:var(--cyan); font-weight:600; text-shadow:0 0 8px rgba(34,232,240,.5);}
+  .topbar h1{margin:2px 0 0; font-size:26px; font-weight:800; letter-spacing:-0.5px;}
+  .topbar .sub{font-family:var(--font-mono); font-size:11.5px; color:var(--text-dim); margin-top:2px;}
+
+  /* ---- Content ---- */
+  .content{flex:1; overflow-y:auto; padding-bottom:90px;}
+  .section{padding:20px;}
+  .section-title{font-family:var(--font-mono); font-size:11px; letter-spacing:1.8px; text-transform:uppercase; color:var(--cyan); font-weight:600; margin:0 0 10px; opacity:.9;}
+
+  /* ---- Stat grid ---- */
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 20px 4px;}
+  .stat-card{background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:14px 16px; position:relative; overflow:hidden;}
+  .stat-card.wide{grid-column:1 / -1;}
+  .stat-card .label{font-family:var(--font-mono); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); font-weight:600;}
+  .stat-card .value{font-family:var(--font-mono); font-size:24px; font-weight:700; margin-top:4px; letter-spacing:-0.5px;}
+  .stat-card .value.brass{color:var(--amber); text-shadow:0 0 12px rgba(245,166,35,.35);}
+  .stat-card .value.forest{color:var(--green); text-shadow:0 0 12px rgba(61,220,132,.35);}
+  .stat-card .delta{font-family:var(--font-mono); font-size:11px; margin-top:4px; color:var(--text-dim);}
+  .stat-card .delta.up{color:var(--green);}
+
+  /* ---- Pipeline node graph ---- */
+  .pipeline{margin:18px 20px 6px; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px;}
+  .pipeline-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+  .pipeline-head .t{font-family:var(--font-mono); font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); font-weight:600;}
+  .pipeline-head .n{font-family:var(--font-mono); font-size:11px; color:var(--cyan); font-weight:700;}
+  .pipe-svg{width:100%; height:auto; display:block;}
+  .pipe-node-label{font-family:var(--font-mono); font-size:9px; letter-spacing:.5px; text-transform:uppercase; fill:var(--text-dim);}
+  .pipe-node-num{font-family:var(--font-mono); font-size:15px; font-weight:700; fill:var(--text);}
+
+  /* ---- Cards / list rows ---- */
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:10px;}
+  .row-between{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .biz-name{font-weight:700; font-size:15px; letter-spacing:-0.2px; color:var(--text);}
+  .biz-meta{font-family:var(--font-mono); font-size:11px; color:var(--text-dim); margin-top:2px;}
+  .price-tag{font-family:var(--font-mono); font-weight:700; font-size:15px; color:var(--green); white-space:nowrap; text-shadow:0 0 10px rgba(61,220,132,.3);}
+  .badge{display:inline-block; font-family:var(--font-mono); font-size:9.5px; letter-spacing:1px; text-transform:uppercase; font-weight:700; padding:3px 9px; border-radius:20px; margin-top:8px; border:1px solid transparent;}
+  .badge.searching{background:rgba(245,166,35,.1); color:var(--amber); border-color:rgba(245,166,35,.3); box-shadow:0 0 8px rgba(245,166,35,.15);}
+  .badge.sent{background:rgba(34,232,240,.1); color:var(--cyan); border-color:rgba(34,232,240,.3); box-shadow:0 0 8px rgba(34,232,240,.15);}
+  .badge.responded{background:rgba(255,84,104,.1); color:var(--red); border-color:rgba(255,84,104,.3); box-shadow:0 0 8px rgba(255,84,104,.15);}
+  .badge.closed{background:rgba(61,220,132,.1); color:var(--green); border-color:rgba(61,220,132,.3); box-shadow:0 0 8px rgba(61,220,132,.15);}
+  .card-foot{display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-family:var(--font-mono); font-size:11px; color:var(--text-dim);}
+
+  .preview{width:100%; height:110px; border-radius:8px; margin-top:10px; background-size:cover; background-position:center; position:relative; display:flex; align-items:flex-end; padding:8px; overflow:hidden; border:1px solid var(--border);}
+  .preview::after{content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,.7), transparent 60%);}
+  .preview .url{position:relative; z-index:1; color:#fff; font-family:var(--font-mono); font-size:11px; font-weight:600;}
+
+  .mini-stats{display:flex; gap:8px; padding:0 20px 16px;}
+  .mini{flex:1; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px 12px; text-align:center;}
+  .mini .n{font-family:var(--font-mono); font-size:18px; font-weight:700; color:var(--cyan);}
+  .mini .l{font-family:var(--font-mono); font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); margin-top:2px;}
+
+  /* ---- Response tab ---- */
+  .thread-list .card{cursor:pointer;}
+  .thread{display:none; flex-direction:column; height:calc(100vh - 200px);}
+  .thread.active{display:flex;}
+  .thread-msgs{flex:1; overflow-y:auto; padding:14px 20px; display:flex; flex-direction:column; gap:10px;}
+  .msg{max-width:78%; padding:9px 13px; border-radius:12px; font-size:13.5px; line-height:1.4;}
+  .msg.out{align-self:flex-end; background:var(--cyan-dim); color:#eafeff; border-bottom-right-radius:4px; box-shadow:0 0 12px rgba(34,232,240,.15);}
+  .msg.in{align-self:flex-start; background:var(--panel-2); border:1px solid var(--border); color:var(--text); border-bottom-left-radius:4px;}
+  .msg .meta{font-family:var(--font-mono); font-size:9.5px; opacity:.55; margin-top:4px;}
+  .composer{display:flex; gap:8px; padding:12px 20px; border-top:1px solid var(--border); background:var(--panel);}
+  .composer input{flex:1; border:1px solid var(--border); border-radius:20px; padding:10px 16px; font-size:13.5px; outline:none; background:var(--bg); color:var(--text);}
+  .composer button{background:var(--cyan); color:#00151a; border:none; border-radius:20px; padding:0 18px; font-weight:700; font-size:12.5px; box-shadow:0 0 14px rgba(34,232,240,.4);}
+  .back-btn{font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--cyan); padding:14px 20px 0; cursor:pointer;}
+
+  /* ---- Tab bar (mobile bottom / desktop sidebar) ---- */
+  .tabbar{position:absolute; bottom:0; left:0; right:0; display:flex; background:var(--panel); border-top:1px solid var(--border); padding:8px 4px 14px; z-index:6;}
+  .tab{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 0; cursor:pointer; opacity:.5;}
+  .tab.active{opacity:1;}
+  .tab svg{width:20px; height:20px; stroke:var(--text);}
+  .tab .tl{font-family:var(--font-mono); font-size:9px; letter-spacing:.3px; font-weight:600; color:var(--text);}
+  .tab.active .tl{color:var(--cyan); text-shadow:0 0 8px rgba(34,232,240,.6);}
+  .tab.active svg{stroke:var(--cyan); filter:drop-shadow(0 0 4px rgba(34,232,240,.6));}
+
+  .view{display:none;}
+  .view.active{display:block;}
+  .empty{text-align:center; padding:40px 20px; color:var(--text-dim); font-family:var(--font-mono); font-size:12.5px;}
+  .filter-row{display:flex; gap:8px; padding:0 20px 14px; overflow-x:auto;}
+  .chip{flex:none; font-family:var(--font-mono); font-size:11px; font-weight:600; padding:6px 14px; border-radius:20px; background:var(--panel); border:1px solid var(--border); color:var(--text-dim); cursor:pointer; white-space:nowrap;}
+  .chip.active{background:rgba(34,232,240,.1); color:var(--cyan); border-color:var(--cyan);}
+
+  /* ---- Desktop layout (sidebar nav, wide content) ---- */
+  @media (min-width:900px){
+    #app{flex-direction:row; max-width:none;}
+    .tabbar{position:fixed; top:0; left:0; bottom:0; right:auto; width:88px; flex-direction:column; padding:24px 0; border-top:none; border-right:1px solid var(--border); justify-content:flex-start; gap:8px;}
+    .tab{flex:none; padding:14px 0;}
+    .content{margin-left:88px; padding-bottom:20px;}
+    .topbar{margin-left:88px;}
+    .stat-grid{grid-template-columns:repeat(4,1fr); max-width:1100px;}
+    .stat-card.wide{grid-column:span 2;}
+    .section{max-width:1100px;}
+    .section > .card, #searching-list .card, #income-list .card, #archive-list .card, #dash-active-list .card, #dash-recent-closed .card, #prospects-list .card{display:inline-block; width:calc(50% - 8px); vertical-align:top; margin-right:16px;}
+    #archive-list{display:flex; flex-wrap:wrap; gap:0;}
+    .pipeline{max-width:1100px;}
+  }
+</style>
+</head>
+<body>
+<div id="auth-gate" style="min-height:100vh;background:#0b0f19;color:#e7ebf3;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:32px;font-family:'Inter',-apple-system,sans-serif;">
+  <div style="width:100%;max-width:360px;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#22e8f0;font-weight:600;text-shadow:0 0 8px rgba(34,232,240,.5);">Dealflow</div>
+    <h1 style="font-size:28px;font-weight:800;margin:6px 0 24px;">Sign in</h1>
+    <input id="auth-email" type="email" placeholder="Email" style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid #1e2534;background:#10141f;color:#e7ebf3;margin-bottom:10px;font-size:14px;">
+    <input id="auth-password" type="password" placeholder="Password" style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid #1e2534;background:#10141f;color:#e7ebf3;margin-bottom:14px;font-size:14px;">
+    <button onclick="authLogin()" style="width:100%;padding:13px;border-radius:8px;border:none;background:#22e8f0;color:#00151a;font-weight:700;font-size:14px;margin-bottom:10px;cursor:pointer;box-shadow:0 0 16px rgba(34,232,240,.35);">Sign In</button>
+    <button onclick="authSignup()" style="width:100%;padding:13px;border-radius:8px;border:1px solid #1e2534;background:transparent;color:#e7ebf3;font-weight:600;font-size:14px;cursor:pointer;">Create Account</button>
+    <div id="auth-msg" style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#ff5468;"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+
+
+  <!-- ============ DASHBOARD ============ -->
+  <div class="view active" id="view-dashboard">
+    <div class="topbar">
+      <div class="eyebrow">Dealflow / Overview</div>
+      <h1>Dashboard</h1>
+      <div class="sub" id="dash-date"></div>
+    </div>
+    <div class="content">
+      <div class="stat-grid" style="padding-top:18px;">
+        <div class="stat-card wide">
+          <div class="label">Total Revenue</div>
+          <div class="value brass" id="stat-total-rev">$0</div>
+          <div class="delta up" id="stat-total-delta">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">This Month</div>
+          <div class="value" id="stat-month-rev">$0</div>
+          <div class="delta" id="stat-month-count">0 sold</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Avg. Sale Price</div>
+          <div class="value" id="stat-avg">$0</div>
+          <div class="delta">per site sold</div>
+        </div>
+      </div>
+
+      <div class="pipeline">
+        <div class="pipeline-head">
+          <div class="t">Pipeline — All Time</div>
+          <div class="n" id="pipe-conv">0% close rate</div>
+        </div>
+        <svg class="pipe-svg" viewBox="0 0 420 110" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <line x1="52" y1="40" x2="158" y2="40" stroke="#2a3244" stroke-width="2"/>
+          <line x1="158" y1="40" x2="262" y2="40" stroke="#2a3244" stroke-width="2"/>
+          <line x1="262" y1="40" x2="368" y2="40" stroke="#2a3244" stroke-width="2"/>
+
+          <g id="node-searching">
+            <circle cx="52" cy="40" r="26" fill="#10141f" stroke="#7c869c" stroke-width="1.5"/>
+            <text x="52" y="45" text-anchor="middle" class="pipe-node-num" id="pn-searching">0</text>
+            <text x="52" y="86" text-anchor="middle" class="pipe-node-label">Searching</text>
+          </g>
+          <g id="node-sent">
+            <circle cx="158" cy="40" r="26" fill="#10141f" stroke="#f5a623" stroke-width="1.5" filter="url(#glow)"/>
+            <text x="158" y="45" text-anchor="middle" class="pipe-node-num" id="pn-sent">0</text>
+            <text x="158" y="86" text-anchor="middle" class="pipe-node-label">Sent</text>
+          </g>
+          <g id="node-responded">
+            <circle cx="262" cy="40" r="26" fill="#10141f" stroke="#22e8f0" stroke-width="1.5" filter="url(#glow)"/>
+            <text x="262" y="45" text-anchor="middle" class="pipe-node-num" id="pn-responded">0</text>
+            <text x="262" y="86" text-anchor="middle" class="pipe-node-label">Responded</text>
+          </g>
+          <g id="node-closed">
+            <circle cx="368" cy="40" r="26" fill="#10141f" stroke="#3ddc84" stroke-width="1.5" filter="url(#glow)"/>
+            <text x="368" y="45" text-anchor="middle" class="pipe-node-num" id="pn-closed">0</text>
+            <text x="368" y="86" text-anchor="middle" class="pipe-node-label">Closed</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Active &amp; Pending</div>
+        <div id="dash-active-list"></div>
+      </div>
+
+      <div class="section" style="padding-top:0;">
+        <div class="section-title">Recent Closes</div>
+        <div id="dash-recent-closed"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ INCOME ============ -->
+  <div class="view" id="view-income">
+    <div class="topbar">
+      <div class="eyebrow">Dealflow / Revenue</div>
+      <h1>Income</h1>
+      <div class="sub">Every closed sale, broken down</div>
+    </div>
+    <div class="content">
+      <div class="stat-grid" style="padding-top:18px;">
+        <div class="stat-card"><div class="label">This Week</div><div class="value forest" id="inc-week">$0</div></div>
+        <div class="stat-card"><div class="label">This Month</div><div class="value forest" id="inc-month">$0</div></div>
+        <div class="stat-card"><div class="label">This Year</div><div class="value forest" id="inc-year">$0</div></div>
+        <div class="stat-card"><div class="label">All Time</div><div class="value brass" id="inc-all">$0</div></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Sales Log</div>
+        <div id="income-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ARCHIVE ============ -->
+  <div class="view" id="view-archive">
+    <div class="topbar">
+      <div class="eyebrow">Dealflow / Portfolio</div>
+      <h1>Archive</h1>
+      <div class="sub">Every website you've shipped</div>
+    </div>
+    <div class="content">
+      <div class="mini-stats" style="padding-top:18px;">
+        <div class="mini"><div class="n" id="arc-total">0</div><div class="l">Total Sold</div></div>
+        <div class="mini"><div class="n" id="arc-active">0</div><div class="l">Live Sites</div></div>
+        <div class="mini"><div class="n" id="arc-searching">0</div><div class="l">In Search</div></div>
+      </div>
+      <div class="section" style="padding-top:0;">
+        <div id="archive-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SEARCHING ============ -->
+  <div class="view" id="view-searching">
+    <div class="topbar">
+      <div class="eyebrow">Dealflow / Outreach</div>
+      <h1>Searching</h1>
+      <div class="sub">Packages sent, awaiting response</div>
+    </div>
+    <div class="content">
+      <div class="section" style="padding-top:18px; padding-bottom:0;">
+        <div class="section-title">Prospects Awaiting Review</div>
+        <div id="prospects-list"></div>
+      </div>
+
+      <div class="section" style="padding-top:8px;">
+        <div class="section-title">Saved Searches</div>
+        <div id="saved-searches-list"></div>
+        <div class="card" style="margin-top:4px;">
+          <div style="font-size:11px; font-weight:800; color:var(--brass-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">New Search</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <input id="ns-label" placeholder="Label (e.g. Austin Bakeries)" style="padding:9px 12px; border-radius:8px; border:1px solid var(--line-light); font-size:13px;">
+            <div style="display:flex; gap:8px;">
+              <input id="ns-city" placeholder="City" style="flex:1; padding:9px 12px; border-radius:8px; border:1px solid var(--line-light); font-size:13px;">
+              <input id="ns-state" placeholder="State" style="width:70px; padding:9px 12px; border-radius:8px; border:1px solid var(--line-light); font-size:13px;">
+            </div>
+            <input id="ns-category" placeholder="Category (e.g. bakery)" style="padding:9px 12px; border-radius:8px; border:1px solid var(--line-light); font-size:13px;">
+            <input id="ns-rating" placeholder="Min rating (e.g. 4.5)" style="padding:9px 12px; border-radius:8px; border:1px solid var(--line-light); font-size:13px;">
+            <button onclick="createSavedSearch()" style="padding:11px; border-radius:8px; border:none; background:var(--ink); color:var(--brass); font-weight:800; font-size:13px;">Add Saved Search</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section" style="padding-top:0;">
+        <div class="section-title">Pipeline</div>
+        <div class="filter-row" style="padding:0 0 14px;">
+          <div class="chip active" data-filter="all">All</div>
+          <div class="chip" data-filter="searching">Searching</div>
+          <div class="chip" data-filter="sent">Sent</div>
+          <div class="chip" data-filter="responded">Responded</div>
+          <div class="chip" data-filter="overdue">Follow-up due</div>
+        </div>
+        <div id="searching-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RESPONSE ============ -->
+  <div class="view" id="view-response">
+    <div class="topbar">
+      <div class="eyebrow">Dealflow / Inbox</div>
+      <h1>Response</h1>
+      <div class="sub" id="resp-sub">Talk directly with prospects</div>
+    </div>
+    <div class="content">
+      <div class="section thread-list" id="thread-list-wrap" style="padding-top:18px;">
+        <div id="thread-list"></div>
+      </div>
+      <div class="thread" id="thread-open">
+        <div class="back-btn" onclick="closeThread()">‹ All conversations</div>
+        <div class="thread-msgs" id="thread-msgs"></div>
+        <div class="composer">
+          <input id="msg-input" placeholder="Write a reply…" />
+          <button onclick="sendMsg()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SITE PREVIEW MODAL ============ -->
+  <div id="site-preview-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:50; align-items:center; justify-content:center;">
+    <div style="background:#10141f; border:1px solid #1e2534; width:94%; max-width:900px; height:85vh; border-radius:12px; overflow:hidden; display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid #1e2534;">
+        <div style="font-family:'JetBrains Mono',monospace; font-weight:600; font-size:12px; color:#e7ebf3;">Generated Site Preview</div>
+        <div style="display:flex; gap:16px; align-items:center;">
+          <a id="preview-open-tab" href="#" target="_blank" style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:#22e8f0; text-decoration:none;">Open in tab ↗</a>
+          <span onclick="closePreviewModal()" style="cursor:pointer; font-weight:700; color:#7c869c;">✕</span>
+        </div>
+      </div>
+      <iframe id="preview-iframe" style="flex:1; border:none; width:100%; background:#fff;"></iframe>
+    </div>
+  </div>
+
+  <!-- ============ TAB BAR ============ -->
+  <div class="tabbar">
+    <div class="tab active" data-view="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+      <div class="tl">Home</div>
+    </div>
+    <div class="tab" data-view="income">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-4 4"/></svg>
+      <div class="tl">Income</div>
+    </div>
+    <div class="tab" data-view="archive">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 13h4"/></svg>
+      <div class="tl">Archive</div>
+    </div>
+    <div class="tab" data-view="searching">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <div class="tl">Searching</div>
+    </div>
+    <div class="tab" data-view="response">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <div class="tl">Response</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let AUTH_TOKEN = null;
+let AUTH_USER_ID = null;
+
+function authHeaders(){
+  return {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${AUTH_TOKEN || SUPABASE_KEY}`,
+    'Content-Type': 'application/json'
+  };
+}
+
+async function authSignup(){
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const msg = document.getElementById('auth-msg');
+  msg.style.color = '#B4553A'; msg.textContent = 'Creating account…';
+  try{
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method:'POST', headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg || data.error_description || 'Signup failed');
+    if(data.access_token){ onAuthed(data); }
+    else { msg.style.color = '#7FCBA4'; msg.textContent = 'Account created — check your email to confirm, then sign in.'; }
+  }catch(e){ msg.textContent = e.message; }
+}
+
+async function authLogin(){
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const msg = document.getElementById('auth-msg');
+  msg.style.color = '#B4553A'; msg.textContent = 'Signing in…';
+  try{
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method:'POST', headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.msg || data.error_description || 'Sign in failed');
+    onAuthed(data);
+  }catch(e){ msg.textContent = e.message; }
+}
+
+function onAuthed(data){
+  AUTH_TOKEN = data.access_token;
+  AUTH_USER_ID = data.user && data.user.id;
+  document.getElementById('auth-gate').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  initApp();
+}
+
+/* ---------------- DATA LAYER ---------------- */
+const SEED_DEALS = [
+  {id:'d1', business:'Marino\'s Trattoria', city:'Providence', state:'RI', category:'Italian Restaurant', rating:4.8, status:'closed', price:1850, dateClosed:'2026-08-02', dateSent:'2026-07-20', siteUrl:'marinos-trattoria.netlify.app', color:'#8B3A2A'},
+  {id:'d2', business:'Coastline Dental Group', city:'Wilmington', state:'NC', category:'Dentist', rating:4.9, status:'closed', price:2400, dateClosed:'2026-08-10', dateSent:'2026-07-28', siteUrl:'coastline-dental.netlify.app', color:'#2C5F7C'},
+  {id:'d3', business:'Iron Anchor Tattoo', city:'Austin', state:'TX', category:'Tattoo Studio', rating:4.7, status:'closed', price:1200, dateClosed:'2026-07-18', dateSent:'2026-07-05', siteUrl:'iron-anchor-tattoo.netlify.app', color:'#1A1A1A'},
+  {id:'d4', business:'Blume Floral Co.', city:'Portland', state:'OR', category:'Florist', rating:4.9, status:'closed', price:950, dateClosed:'2026-06-29', dateSent:'2026-06-15', siteUrl:'blume-floral.netlify.app', color:'#5C7A4A'},
+  {id:'d5', business:'Summit Ridge Roofing', city:'Denver', state:'CO', category:'Roofing Contractor', rating:4.6, status:'closed', price:2900, dateClosed:'2026-05-22', dateSent:'2026-05-10', siteUrl:'summit-ridge-roofing.netlify.app', color:'#7C4A2C'},
+  {id:'d6', business:'Hearth & Vine Bistro', city:'Charleston', state:'SC', category:'Restaurant', rating:4.8, status:'responded', price:2100, dateSent:'2026-08-09', lastContact:'2026-08-14', followUp:'2026-08-18'},
+  {id:'d7', business:'Palmetto Family Chiropractic', city:'Charleston', state:'SC', category:'Chiropractor', rating:4.9, status:'sent', price:1750, dateSent:'2026-08-12', followUp:'2026-08-19'},
+  {id:'d8', business:'Northgate Auto Repair', city:'Columbus', state:'OH', category:'Auto Repair', rating:4.7, status:'sent', price:1400, dateSent:'2026-08-13', followUp:'2026-08-20'},
+  {id:'d9', business:'Willow Creek Bakery', city:'Boise', state:'ID', category:'Bakery', rating:4.9, status:'searching', price:1100, dateSent:null, followUp:null},
+  {id:'d10', business:'Redwood Pet Grooming', city:'Sacramento', state:'CA', category:'Pet Groomer', rating:4.8, status:'searching', price:900, dateSent:null, followUp:null},
+];
+
+const SEED_MSGS = {
+  d6: [
+    {dir:'out', text:'Hi Hearth & Vine team — built a live preview site for you, link + pricing attached. Let me know what you think!', t:'Aug 9, 9:02 AM'},
+    {dir:'in', text:'This looks great, actually. Can we hop on a call this week to talk pricing?', t:'Aug 14, 3:41 PM'},
+    {dir:'out', text:'Absolutely — I have Thurs 2pm or Fri 10am open, which works better?', t:'Aug 14, 4:10 PM'},
+  ],
+  d7: [
+    {dir:'out', text:'Hi Palmetto Family Chiropractic — put together a tailored site + rate sheet, link inside. Happy to answer questions.', t:'Aug 12, 11:15 AM'},
+  ],
+  d8: [
+    {dir:'out', text:'Hi Northgate team — sent over a live preview site built for your shop plus pricing. Would love your thoughts.', t:'Aug 13, 8:47 AM'},
+  ],
+};
+
+const SUPABASE_URL = 'https://ocwscdgeamejvcyxsmhy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_HVfDAIVIQQego7av1EZRPQ_N82Sj0CO';
+
+function supa(path, opts={}){
+  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      ...authHeaders(),
+      'Prefer': 'return=representation',
+      ...(opts.headers||{})
+    }
+  }).then(r=>{ if(!r.ok) throw new Error('supabase error '+r.status); return r.json(); });
+}
+
+function dealFromRow(r){
+  return {
+    id:r.id, business:r.business_name, category:r.category, city:r.city, state:r.state,
+    rating:r.rating, status:r.status, price:r.price, siteUrl:r.site_url, color:r.site_color,
+    dateSent:r.date_sent, dateClosed:r.date_closed, followUp:r.follow_up_date,
+    phone:r.phone, address:r.address, site_html:r.site_html
+  };
+}
+function rowFromDeal(d){
+  return {
+    business_name:d.business, category:d.category, city:d.city, state:d.state, rating:d.rating,
+    status:d.status, price:d.price, site_url:d.siteUrl||null, site_color:d.color||null,
+    date_sent:d.dateSent||null, date_closed:d.dateClosed||null, follow_up_date:d.followUp||null
+  };
+}
+
+async function loadDeals(){
+  const existing = await supa('deals?select=*');
+  if(existing.length) return existing.map(dealFromRow);
+  // first run: seed the table
+  const rows = SEED_DEALS.map(rowFromDeal);
+  const inserted = await supa('deals', {method:'POST', body:JSON.stringify(rows)});
+  return inserted.map(dealFromRow);
+}
+
+async function loadMsgs(){
+  const rows = await supa('messages?select=*&order=sent_at.asc');
+  if(rows.length){
+    const grouped = {};
+    rows.forEach(r=>{
+      if(!grouped[r.deal_id]) grouped[r.deal_id] = [];
+      grouped[r.deal_id].push({dir:r.direction, text:r.body, t:new Date(r.sent_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})});
+    });
+    return remapMsgsToDealIds(grouped);
+  }
+  // first run: seed messages, mapped to the real generated deal ids by business name
+  const byName = {};
+  DEALS.forEach(d=>byName[d.business]=d.id);
+  const seedRows = [];
+  Object.keys(SEED_MSGS).forEach(oldId=>{
+    const business = SEED_DEALS.find(d=>d.id===oldId).business;
+    const realId = byName[business];
+    if(!realId) return;
+    SEED_MSGS[oldId].forEach(m=>{
+      seedRows.push({deal_id:realId, direction:m.dir, body:m.text});
+    });
+  });
+  if(seedRows.length) await supa('messages', {method:'POST', body:JSON.stringify(seedRows)});
+  return loadMsgs();
+}
+function remapMsgsToDealIds(grouped){ return grouped; }
+
+function saveMsgs(){ /* no-op: sendMsg() writes directly to Supabase now */ }
+
+let DEALS = [];
+let MSGS = {};
+let activeThread = null;
+let searchFilter = 'all';
+
+const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+const dateFmt = s => s ? new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+
+/* ---------------- RENDER: DASHBOARD ---------------- */
+function renderDashboard(){
+  const closed = DEALS.filter(d=>d.status==='closed');
+  const now = new Date();
+  const monthClosed = closed.filter(d=> d.dateClosed && d.dateClosed.slice(0,7)===now.toISOString().slice(0,7));
+  const totalRev = closed.reduce((s,d)=>s+d.price,0);
+  const monthRev = monthClosed.reduce((s,d)=>s+d.price,0);
+  const avg = closed.length ? totalRev/closed.length : 0;
+
+  document.getElementById('dash-date').textContent = now.toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric'});
+  document.getElementById('stat-total-rev').textContent = fmt(totalRev);
+  document.getElementById('stat-total-delta').textContent = closed.length + ' sites sold';
+  document.getElementById('stat-month-rev').textContent = fmt(monthRev);
+  document.getElementById('stat-month-count').textContent = monthClosed.length + ' sold';
+  document.getElementById('stat-avg').textContent = fmt(avg);
+
+  const searching = DEALS.filter(d=>d.status==='searching').length;
+  const sent = DEALS.filter(d=>d.status==='sent').length;
+  const responded = DEALS.filter(d=>d.status==='responded').length;
+  const closedN = closed.length;
+  const totalPipe = DEALS.length;
+  document.getElementById('pn-searching').textContent = searching;
+  document.getElementById('pn-sent').textContent = sent;
+  document.getElementById('pn-responded').textContent = responded;
+  document.getElementById('pn-closed').textContent = closedN;
+  document.getElementById('pipe-conv').textContent = (totalPipe ? Math.round(closedN/totalPipe*100) : 0) + '% close rate';
+
+  const activeList = DEALS.filter(d=>['sent','responded'].includes(d.status))
+    .sort((a,b)=> (a.followUp||'9999').localeCompare(b.followUp||'9999'));
+  document.getElementById('dash-active-list').innerHTML = activeList.length ? activeList.map(dealRowSmall).join('') :
+    '<div class="empty">Nothing active right now — head to Searching to send new packages.</div>';
+
+  const recent = closed.sort((a,b)=>b.dateClosed.localeCompare(a.dateClosed)).slice(0,3);
+  document.getElementById('dash-recent-closed').innerHTML = recent.length ? recent.map(dealRowSmall).join('') :
+    '<div class="empty">No closed sales yet.</div>';
+}
+
+function dealRowSmall(d){
+  const badge = `<span class="badge ${d.status}">${d.status}</span>`;
+  return `<div class="card">
+    <div class="row-between">
+      <div><div class="biz-name">${d.business}</div><div class="biz-meta">${d.category} · ${d.city}, ${d.state} · ★ ${d.rating}</div></div>
+      <div class="price-tag">${fmt(d.price)}</div>
+    </div>
+    <div class="card-foot"><span>${badge}</span><span>${d.status==='closed' ? 'Closed '+dateFmt(d.dateClosed) : 'Follow up '+dateFmt(d.followUp)}</span></div>
+  </div>`;
+}
+
+/* ---------------- RENDER: INCOME ---------------- */
+function renderIncome(){
+  const closed = DEALS.filter(d=>d.status==='closed').sort((a,b)=>b.dateClosed.localeCompare(a.dateClosed));
+  const now = new Date();
+  const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7);
+  const yearPrefix = now.toISOString().slice(0,4);
+  const monthPrefix = now.toISOString().slice(0,7);
+
+  const weekSum = closed.filter(d=>new Date(d.dateClosed+'T00:00:00')>=weekAgo).reduce((s,d)=>s+d.price,0);
+  const monthSum = closed.filter(d=>d.dateClosed.slice(0,7)===monthPrefix).reduce((s,d)=>s+d.price,0);
+  const yearSum = closed.filter(d=>d.dateClosed.slice(0,4)===yearPrefix).reduce((s,d)=>s+d.price,0);
+  const allSum = closed.reduce((s,d)=>s+d.price,0);
+
+  document.getElementById('inc-week').textContent = fmt(weekSum);
+  document.getElementById('inc-month').textContent = fmt(monthSum);
+  document.getElementById('inc-year').textContent = fmt(yearSum);
+  document.getElementById('inc-all').textContent = fmt(allSum);
+
+  document.getElementById('income-list').innerHTML = closed.length ? closed.map(d=>`
+    <div class="card">
+      <div class="row-between">
+        <div><div class="biz-name">${d.business}</div><div class="biz-meta">${d.city}, ${d.state} · closed ${dateFmt(d.dateClosed)}</div></div>
+        <div class="price-tag">${fmt(d.price)}</div>
+      </div>
+    </div>`).join('') : '<div class="empty">No sales recorded yet.</div>';
+}
+
+/* ---------------- RENDER: ARCHIVE ---------------- */
+function renderArchive(){
+  const closed = DEALS.filter(d=>d.status==='closed');
+  document.getElementById('arc-total').textContent = closed.length;
+  document.getElementById('arc-active').textContent = closed.length;
+  document.getElementById('arc-searching').textContent = DEALS.filter(d=>d.status==='searching').length;
+
+  document.getElementById('archive-list').innerHTML = closed.length ? closed.sort((a,b)=>b.dateClosed.localeCompare(a.dateClosed)).map(d=>`
+    <div class="card">
+      <div class="preview" style="background-color:${d.color||'#333'};">
+        <div class="url">${d.siteUrl}</div>
+      </div>
+      <div class="row-between" style="margin-top:10px;">
+        <div><div class="biz-name">${d.business}</div><div class="biz-meta">${d.category} · ${d.city}, ${d.state}</div></div>
+        <div class="price-tag">${fmt(d.price)}</div>
+      </div>
+      <div class="card-foot"><span>Sold ${dateFmt(d.dateClosed)}</span><span style="color:var(--brass-dim); font-weight:700;">View site ↗</span></div>
+    </div>`).join('') : '<div class="empty">Your sold sites will show up here.</div>';
+}
+
+/* ---------------- RENDER: SEARCHING ---------------- */
+function renderSearching(){
+  const now = new Date();
+  let list = DEALS.filter(d=>['searching','sent','responded'].includes(d.status));
+  if(searchFilter==='overdue') list = list.filter(d=>d.followUp && new Date(d.followUp+'T00:00:00')<=now);
+  else if(searchFilter!=='all') list = list.filter(d=>d.status===searchFilter);
+
+  document.getElementById('searching-list').innerHTML = list.length ? list.map(d=>{
+    const overdue = d.followUp && new Date(d.followUp+'T00:00:00')<=now;
+    return `<div class="card">
+      <div class="row-between">
+        <div><div class="biz-name">${d.business}</div><div class="biz-meta">${d.category} · ${d.city}, ${d.state} · ★ ${d.rating}</div></div>
+        <div class="price-tag">${fmt(d.price)}</div>
+      </div>
+      <span class="badge ${d.status}">${d.status}</span>
+      <div class="card-foot">
+        <span>${d.dateSent ? 'Sent '+dateFmt(d.dateSent) : 'Package not sent yet'}</span>
+        <span style="${overdue?'color:var(--rust); font-weight:800;':''}">${d.followUp ? (overdue?'Follow up now':'Follow up '+dateFmt(d.followUp)) : ''}</span>
+      </div>
+      ${d.status==='searching' ? (
+        d.site_html
+          ? `<div style="display:flex; gap:8px; margin-top:10px;">
+               <button onclick="viewSavedSite('${d.id}')" style="flex:2; padding:10px; border-radius:8px; border:none; background:var(--cyan); color:#00151a; font-weight:700; font-size:12px; box-shadow:0 0 12px rgba(34,232,240,.3);">View Website</button>
+               <button id="gen-btn-${d.id}" onclick="if(confirm('Regenerate will call the AI again and replace the current site. Continue?')) generateAndPreview('${d.id}')" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text-dim); font-weight:600; font-size:11px;">Regenerate</button>
+             </div>`
+          : `<button id="gen-btn-${d.id}" onclick="generateAndPreview('${d.id}')" style="width:100%; margin-top:10px; padding:10px; border-radius:8px; border:none; background:var(--cyan); color:#00151a; font-weight:700; font-size:12px; box-shadow:0 0 12px rgba(34,232,240,.3);">Generate Website</button>`
+      ) : ''}
+    </div>`;
+  }).join('') : '<div class="empty">No deals in this filter.</div>';
+}
+
+/* ---------------- RENDER: RESPONSE ---------------- */
+function renderThreadList(){
+  const withThreads = DEALS.filter(d=>MSGS[d.id]);
+  document.getElementById('thread-list').innerHTML = withThreads.length ? withThreads.map(d=>{
+    const msgs = MSGS[d.id];
+    const last = msgs[msgs.length-1];
+    return `<div class="card" onclick="openThread('${d.id}')">
+      <div class="row-between">
+        <div><div class="biz-name">${d.business}</div><div class="biz-meta">${last.text.slice(0,58)}${last.text.length>58?'…':''}</div></div>
+        <span class="badge ${d.status}">${d.status}</span>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty">No active conversations yet.</div>';
+}
+
+function openThread(id){
+  activeThread = id;
+  document.getElementById('thread-list-wrap').style.display='none';
+  document.getElementById('thread-open').classList.add('active');
+  const d = DEALS.find(x=>x.id===id);
+  document.getElementById('resp-sub').textContent = d.business + ' · ' + d.city + ', ' + d.state;
+  renderThreadMsgs();
+}
+function closeThread(){
+  activeThread = null;
+  document.getElementById('thread-list-wrap').style.display='block';
+  document.getElementById('thread-open').classList.remove('active');
+  document.getElementById('resp-sub').textContent = 'Talk directly with prospects';
+}
+function renderThreadMsgs(){
+  const msgs = MSGS[activeThread] || [];
+  const wrap = document.getElementById('thread-msgs');
+  wrap.innerHTML = msgs.map(m=>`<div class="msg ${m.dir}">${m.text}<div class="meta">${m.t}</div></div>`).join('');
+  wrap.scrollTop = wrap.scrollHeight;
+}
+function sendMsg(){
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if(!text || !activeThread) return;
+  MSGS[activeThread] = MSGS[activeThread] || [];
+  MSGS[activeThread].push({dir:'out', text, t:'Just now'});
+  input.value='';
+  renderThreadMsgs();
+  supa('messages', {method:'POST', body:JSON.stringify([{deal_id:activeThread, direction:'out', body:text}])})
+    .catch(()=>console.error('Failed to save message'));
+}
+document.getElementById('msg-input')?.addEventListener('keydown', e=>{ if(e.key==='Enter') sendMsg(); });
+
+/* ---------------- NAV ---------------- */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-'+tab.dataset.view).classList.add('active');
+  });
+});
+document.querySelectorAll('.chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    searchFilter = chip.dataset.filter;
+    renderSearching();
+  });
+});
+
+/* ---------------- SITE GENERATOR (calls Claude via Edge Function) ---------------- */
+
+function viewSavedSite(dealId){
+  const d = DEALS.find(x=>x.id===dealId);
+  if(!d || !d.site_html) return;
+  showPreviewModal(d.site_html);
+}
+
+const generatingIds = new Set();
+async function generateAndPreview(dealId){
+  if(generatingIds.has(dealId)) return;
+  generatingIds.add(dealId);
+  const btn = document.getElementById('gen-btn-'+dealId);
+  if(btn){ btn.disabled = true; btn.textContent = 'Generating… (30-60s)'; }
+  try{
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-site`, {
+      method:'POST',
+      headers:{...authHeaders()},
+      body: JSON.stringify({dealId})
+    });
+    const data = await res.json();
+    if(!res.ok || data.error) throw new Error(data.error || 'Generation failed');
+    const d = DEALS.find(x=>x.id===dealId);
+    if(d) d.site_html = data.html;
+    showPreviewModal(data.html);
+  }catch(e){
+    console.error('Site generation failed', e);
+    alert('Site generation failed — check the generate-site function logs in Supabase.');
+  }finally{
+    generatingIds.delete(dealId);
+    if(btn){ btn.disabled = false; renderSearching(); }
+  }
+}
+
+function showPreviewModal(html){
+  const modal = document.getElementById('site-preview-modal');
+  const iframe = document.getElementById('preview-iframe');
+  const openTab = document.getElementById('preview-open-tab');
+  iframe.srcdoc = html;
+  const blobUrl = URL.createObjectURL(new Blob([html], {type:'text/html'}));
+  openTab.href = blobUrl;
+  modal.style.display = 'flex';
+}
+function closePreviewModal(){
+  document.getElementById('site-preview-modal').style.display = 'none';
+  document.getElementById('preview-iframe').srcdoc = '';
+}
+
+/* ---------------- PROSPECTS + SAVED SEARCHES ---------------- */
+let PROSPECTS = [];
+let SEARCHES = [];
+
+async function loadProspectsAndSearches(){
+  PROSPECTS = await supa('prospects_queue?select=*&status=eq.pending&order=found_at.desc').catch(()=>[]);
+  SEARCHES = await supa('saved_searches?select=*&order=created_at.desc').catch(()=>[]);
+  renderProspects();
+  renderSavedSearches();
+}
+
+function renderProspects(){
+  const el = document.getElementById('prospects-list');
+  if(!el) return;
+  el.innerHTML = PROSPECTS.length ? PROSPECTS.map(p=>`
+    <div class="card">
+      <div class="row-between">
+        <div><div class="biz-name">${p.business_name}</div><div class="biz-meta">${p.category} · ${p.city}, ${p.state} · ★ ${p.rating ?? '—'}</div></div>
+      </div>
+      <div class="biz-meta" style="margin-top:6px;">${p.address ?? ''} ${p.phone ? '· '+p.phone : ''}</div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button onclick="approveProspect('${p.id}')" style="flex:1; padding:9px; border-radius:8px; border:none; background:var(--forest); color:#fff; font-weight:800; font-size:12px;">Approve → Deal</button>
+        <button onclick="rejectProspect('${p.id}')" style="flex:1; padding:9px; border-radius:8px; border:1px solid var(--line-light); background:#fff; color:#8A8FA0; font-weight:800; font-size:12px;">Reject</button>
+      </div>
+    </div>`).join('') : '<div class="empty">No new prospects waiting — run a saved search or wait for the weekly job.</div>';
+}
+
+function renderSavedSearches(){
+  const el = document.getElementById('saved-searches-list');
+  if(!el) return;
+  el.innerHTML = SEARCHES.map(s=>`
+    <div class="card" style="padding:10px 14px; margin-bottom:8px;">
+      <div class="row-between">
+        <div><div class="biz-name" style="font-size:13px;">${s.label}</div><div class="biz-meta">${s.category} · ${s.city}, ${s.state} · min ★${s.min_rating}</div></div>
+        <span class="badge ${s.active?'closed':'searching'}">${s.active?'active':'paused'}</span>
+      </div>
+    </div>`).join('');
+}
+
+async function createSavedSearch(){
+  const label = document.getElementById('ns-label').value.trim();
+  const city = document.getElementById('ns-city').value.trim();
+  const state = document.getElementById('ns-state').value.trim();
+  const category = document.getElementById('ns-category').value.trim();
+  const min_rating = parseFloat(document.getElementById('ns-rating').value) || 4.5;
+  if(!label || !city || !state || !category){ alert('Fill in label, city, state, and category.'); return; }
+  try{
+    await supa('saved_searches', {method:'POST', body:JSON.stringify([{label, city, state, category, min_rating, owner_id:AUTH_USER_ID}])});
+    ['ns-label','ns-city','ns-state','ns-category','ns-rating'].forEach(id=>document.getElementById(id).value='');
+    loadProspectsAndSearches();
+  }catch(e){ alert('Could not save — check console.'); console.error(e); }
+}
+
+async function approveProspect(id){
+  const p = PROSPECTS.find(x=>x.id===id);
+  if(!p) return;
+  try{
+    await supa('deals', {method:'POST', body:JSON.stringify([{
+      business_name:p.business_name, category:p.category, city:p.city, state:p.state,
+      rating:p.rating, status:'searching', price:null, owner_id:AUTH_USER_ID,
+      phone:p.phone, address:p.address
+    }])});
+    await supa(`prospects_queue?id=eq.${id}`, {method:'PATCH', body:JSON.stringify({status:'approved'})});
+    PROSPECTS = PROSPECTS.filter(x=>x.id!==id);
+    renderProspects();
+    const deals = await loadDeals(); DEALS = deals;
+    renderDashboard(); renderIncome(); renderArchive(); renderSearching();
+  }catch(e){ alert('Approve failed — check console.'); console.error(e); }
+}
+
+async function rejectProspect(id){
+  try{
+    await supa(`prospects_queue?id=eq.${id}`, {method:'PATCH', body:JSON.stringify({status:'rejected'})});
+    PROSPECTS = PROSPECTS.filter(x=>x.id!==id);
+    renderProspects();
+  }catch(e){ console.error(e); }
+}
+
+/* ---------------- INIT ---------------- */
+function initApp(){
+  loadDeals().then(deals=>{
+    DEALS = deals;
+    return loadMsgs();
+  }).then(msgs=>{
+    MSGS = msgs;
+    renderDashboard(); renderIncome(); renderArchive(); renderSearching(); renderThreadList();
+    loadProspectsAndSearches();
+  }).catch(err=>{
+    console.error('Supabase load failed, falling back to local demo data', err);
+    DEALS = SEED_DEALS; MSGS = SEED_MSGS;
+    renderDashboard(); renderIncome(); renderArchive(); renderSearching(); renderThreadList();
+  });
+}
+</script>
+</body>
+</html>
