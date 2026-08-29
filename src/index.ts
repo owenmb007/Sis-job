@@ -66,7 +66,10 @@ export default {
       // ---- Jobs ----
       if (pathname === '/api/jobs' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
-          `SELECT * FROM jobs WHERE excluded = 0 ORDER BY score DESC, fetched_at DESC LIMIT 200`
+          `SELECT * FROM jobs
+           WHERE excluded = 0
+             AND id NOT IN (SELECT job_id FROM applications)
+           ORDER BY score DESC, fetched_at DESC LIMIT 200`
         ).all();
         return json(results);
       }
@@ -229,6 +232,12 @@ export default {
         await env.DB.prepare(`UPDATE applications SET ${fields.join(', ')} WHERE id = ?`)
           .bind(...values)
           .run();
+        return json({ ok: true });
+      }
+
+      if (appPatchMatch && request.method === 'DELETE') {
+        const id = Number(appPatchMatch[1]);
+        await env.DB.prepare('DELETE FROM applications WHERE id = ?').bind(id).run();
         return json({ ok: true });
       }
 

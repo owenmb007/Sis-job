@@ -59,8 +59,8 @@ async function loadJobs() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ job_id: Number(btn.dataset.save) }),
       });
-      btn.textContent = 'Saved!';
-      btn.disabled = true;
+      btn.closest('.card').remove();
+      await loadApplications();
     });
   });
 }
@@ -93,7 +93,7 @@ async function loadApplications() {
     card.className = 'card';
     card.innerHTML = `
       <h3>${app.title}</h3>
-      <div class="meta">${app.company || ''}</div>
+      <div class="meta"><span class="status-dot" data-status-dot="${app.status}"></span>${app.company || ''}</div>
       <div class="card-actions">
         <select data-status="${app.id}">
           ${STATUSES.map((s) => `<option value="${s}" ${s === app.status ? 'selected' : ''}>${s}</option>`).join('')}
@@ -103,6 +103,7 @@ async function loadApplications() {
           ${resumesCache.map((r) => `<option value="${r.id}" ${r.id === app.resume_id ? 'selected' : ''}>${r.label}</option>`).join('')}
         </select>
         <a href="${app.job_url}" target="_blank" rel="noopener">Open posting to apply</a>
+        <button data-remove="${app.id}">Remove (back to matches)</button>
       </div>
     `;
     list.appendChild(card);
@@ -114,6 +115,8 @@ async function loadApplications() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ status: sel.value }),
       });
+      const dot = sel.closest('.card').querySelector('[data-status-dot]');
+      if (dot) dot.dataset.statusDot = sel.value;
     });
   });
   list.querySelectorAll('[data-resume]').forEach((sel) => {
@@ -123,6 +126,12 @@ async function loadApplications() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ resume_id: sel.value ? Number(sel.value) : null }),
       });
+    });
+  });
+  list.querySelectorAll('[data-remove]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      await api(`/applications/${btn.dataset.remove}`, { method: 'DELETE' });
+      await Promise.all([loadApplications(), loadJobs()]);
     });
   });
 }
