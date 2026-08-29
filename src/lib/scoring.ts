@@ -75,9 +75,10 @@ export function scoreJob(
 export function suggestResumeCategory(title: string, description: string): string {
   const text = `${title} ${description}`.toLowerCase();
   if (/(animal|pet |dog |cat |vet|kennel|shelter|zoo|wildlife)/.test(text)) return 'animal';
-  if (/(child|kids|daycare|day care|preschool|youth|camp counselor|nanny|tutor)/.test(text)) {
-    return 'childcare';
+  if (/(recreation assistant|activities? assistant|senior affairs|community service|city of|county|assisted living)/.test(text)) {
+    return 'government';
   }
-  if (/(stock|retail|cashier|store associate|warehouse|receiving)/.test(text)) return 'retail';
+  if (/(warehouse|fulfillment|shipping|receiving clerk|distribution center)/.test(text)) return 'warehouse';
+  if (/(stock|retail|store associate|merchandis)/.test(text)) return 'retail';
   return 'general';
 }

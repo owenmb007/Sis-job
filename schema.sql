@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS profile (
 CREATE TABLE IF NOT EXISTS resumes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   label TEXT NOT NULL,
-  category TEXT NOT NULL DEFAULT 'general', -- animal | childcare | retail | general | other
+  category TEXT NOT NULL DEFAULT 'general', -- animal | government | warehouse | retail | general
   r2_key TEXT NOT NULL,
   filename TEXT NOT NULL,
   content_type TEXT DEFAULT 'application/octet-stream',
@@ -63,9 +63,9 @@ VALUES (
   'Albuquerque, NM',
   15,
   '["mcdonald","burger king","wendy''s","taco bell","kfc","popeyes","sonic drive","chick-fil-a","pizza hut","domino''s","subway","dairy queen","arby''s","jack in the box","carl''s jr","hardee''s","whataburger","chevron","shell gas","valero","circle k","7-eleven","conoco","phillips 66","speedway","gas station","fuel station","convenience store","truck stop","landfill","waste management","garbage collector","sanitation worker","recycling sorter","junkyard"]',
-  '["cash register","handle cash","cash handling","point of sale","pos system","till","cashier","money order","bank teller","make change","counting money","deposit reconciliation"]',
-  '["animal","pet ","dog ","cat ","vet ","veterinary","kennel","shelter","zoo","wildlife","child","kids","kid-friendly","daycare","day care","preschool","youth program","camp counselor","nanny","tutor","children''s"]',
-  '["assistant","aide","technician","kennel tech","stock associate","stocker","custodian","housekeeping","groundskeeper","laundry attendant","library page","warehouse sorter","packer","receiving clerk"]',
-  '["manager","supervisor","commission","quota","sales target","licensed required","cdl required","accounting","bookkeeping","financial","underwriting"]',
-  'No cash/money handling. Keep tasks simple and routine. Prefers animals or kids as a focus, but open to anything appropriate. No fast food, gas stations, or similar high-turnover manual labor.'
+  '["cash register","handle cash","cash handling","point of sale","pos system","till","cashier","money order","bank teller","make change","counting money","deposit reconciliation","handles transactions","processing transactions","payment transactions"]',
+  '["animal","pet ","dog ","cat ","vet ","veterinary","kennel","shelter","zoo","wildlife","child","kids","kid-friendly","daycare","day care","preschool","youth program","camp counselor","nanny","tutor","children''s","recreation assistant","activities assistant","activity assistant","senior affairs","community service"]',
+  '["assistant","aide","technician","kennel tech","stock associate","stocker","custodian","housekeeping","groundskeeper","laundry attendant","library page","warehouse sorter","packer","receiving clerk","warehouse associate","shipping associate","receiving associate","fulfillment associate","inventory associate","dispatcher"]',
+  '["manager","supervisor","commission","quota","sales target","licensed required","cdl required","accounting","bookkeeping","financial","underwriting","advanced excel","technical support","troubleshooting","data analysis","data analyst"]',
+  'No cash/money handling. Keep tasks simple and routine. Prefers animals or kids as a focus, but open to anything appropriate (community service, warehouse/stocking, retail non-cashier, general customer support). No fast food, gas stations, or similar high-turnover manual labor. Also avoid: advanced Excel/admin work, technical troubleshooting support, sales quotas/commission, bookkeeping/accounting, data analysis.'
 );

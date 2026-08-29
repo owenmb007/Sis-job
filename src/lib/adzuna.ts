@@ -10,17 +10,33 @@ export interface AdzunaJob {
 }
 
 const SEARCH_TERMS = [
+  // animal care
   'animal care',
   'kennel technician',
   'pet care',
   'veterinary assistant',
   'animal shelter',
-  'childcare aide',
-  'daycare assistant',
-  'camp counselor',
+  'boarding attendant',
+  // government / community service
+  'recreation assistant',
+  'activities assistant',
+  'senior affairs',
+  'community service assistant',
+  // warehouse
+  'warehouse associate',
+  'shipping receiving associate',
+  'fulfillment associate',
+  'stocking associate',
+  // retail (non-cashier)
+  'merchandise associate',
+  'overnight stocker',
+  'inventory associate',
+  'sales floor recovery',
+  // general
+  'client support representative',
+  'customer service representative',
   'library page',
   'custodian',
-  'stock associate',
   'housekeeping',
 ];
 

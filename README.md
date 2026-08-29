@@ -53,23 +53,45 @@ npm run deploy
 
 For local development: `npm run db:init` (local DB) then `npm run dev`.
 
-## Getting her resumes in
+## Her resumes
 
-The easiest path: open this project in a Claude chat with the **Google
-Drive** connector enabled (claude.ai → Settings → Connectors → Google
-Drive → connect, then enable it for the chat). Point Claude at her resume
-folder and ask it to download each file and upload it into the deployed
-app via the **Resumes** tab (or directly into the `sis-job-resumes` R2
-bucket) with the right category. Otherwise, upload them by hand from the
-Resumes tab — no Drive access required.
+Pulled directly from her "Cams Job Propoganda" Google Drive folder, which
+already had 5 targeted resumes plus a job-applications checklist written
+for her by (presumably) a family member. They're saved in
+`/tmp/.../scratchpad/resumes/` in the session that built this and are ready
+to upload once the app is deployed — go to **Resumes** and upload each with
+its matching category:
+
+| File | Category |
+|---|---|
+| 1. Government / Community Service Resume | `government` |
+| 2. Professional / Animal Care Resume | `animal` |
+| 3. Warehouse Resume (Amazon, Home Depot, Scholastic, etc.) | `warehouse` |
+| 4. Retail Resume (Non-Cashier Focus) | `retail` |
+| 5. General Resume | `general` |
+
+Her checklist also named specific target employers per category, which are
+now baked into the job-search terms in `src/lib/adzuna.ts`:
+- **Government/community**: City of Albuquerque, Genesis Healthcare, Montebello on Academy, The Neighborhood (Rio Rancho), Morada Albuquerque
+- **Animal care**: Animal Humane New Mexico, VCA Animal Hospitals, Albuquerque Pet Resorts, local shelters/clinics
+- **Warehouse**: Amazon, Grainger, FedEx Ground, Costco
+- **Retail**: TJ Maxx, Walmart, Ross, Lowe's
+- **General**: Paws and Stripes, Eye Associates of NM, Leidos, Copart, Unlimited Service Group
+
+And her own "jobs to avoid" notes are folded into the Preferences
+caution/exclude lists: no advanced-Excel admin work, no technical
+support/troubleshooting roles, no sales quotas/commission, no
+cashier/transaction-handling, no bookkeeping/accounting, no data analysis.
+
+If the Drive folder gets new resumes later, ask Claude (with the Google
+Drive connector enabled) to pull the new file and upload it into the app's
+**Resumes** tab the same way.
 
 ## First run
 
 1. Deploy, then open the app and go to **Preferences** to confirm the
-   defaults still match her situation (they're set from the description used
-   to build this tool — no cash handling, simple tasks, animals/kids
-   preferred, no fast food/gas stations).
-2. Upload her resumes under **Resumes**.
+   defaults still match her situation.
+2. Upload her 5 resumes under **Resumes** with the categories above.
 3. Go to **Job Matches** and click **Refresh job search**.
 4. Save the ones that look right, pick the matching resume, open the
    posting, and apply.
