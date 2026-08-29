@@ -1,0 +1,21 @@
+name = "sis-job"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sis-job-db"
+database_id = "REPLACE_AFTER_WRANGLER_D1_CREATE"
+
+[[r2_buckets]]
+binding = "RESUMES"
+bucket_name = "sis-job-resumes"
+
+# Secrets (do NOT put real values here — set with `wrangler secret put`):
+#   wrangler secret put ADZUNA_APP_ID
+#   wrangler secret put ADZUNA_APP_KEY

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sis-job</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Sis-job</h1>
+    <p class="tagline">Job matches in Albuquerque, NM — filtered for the stuff that actually fits.</p>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="jobs" class="tab active">Job Matches</button>
+    <button data-tab="applications" class="tab">Applications</button>
+    <button data-tab="resumes" class="tab">Resumes</button>
+    <button data-tab="profile" class="tab">Preferences</button>
+  </nav>
+
+  <main>
+    <section id="jobs" class="panel active">
+      <div class="panel-header">
+        <button id="refresh-btn">Refresh job search</button>
+        <span id="refresh-status"></span>
+      </div>
+      <div id="jobs-list" class="cards"></div>
+    </section>
+
+    <section id="applications" class="panel">
+      <div id="applications-list" class="cards"></div>
+    </section>
+
+    <section id="resumes" class="panel">
+      <form id="resume-form">
+        <input type="text" name="label" placeholder="Resume label (e.g. Animal Care Resume)" required />
+        <select name="category">
+          <option value="animal">Animal care</option>
+          <option value="childcare">Childcare</option>
+          <option value="retail">Retail / stocking</option>
+          <option value="general">General</option>
+        </select>
+        <input type="file" name="file" required />
+        <button type="submit">Upload resume</button>
+      </form>
+      <div id="resumes-list" class="cards"></div>
+    </section>
+
+    <section id="profile" class="panel">
+      <form id="profile-form">
+        <label>Name <input type="text" name="name" /></label>
+        <label>Location <input type="text" name="location" /></label>
+        <label>Search radius (miles) <input type="number" name="radius_miles" /></label>
+        <label>Exclude keywords (comma separated) <textarea name="exclude_keywords"></textarea></label>
+        <label>Cash-handling keywords (auto-excluded) <textarea name="cash_handling_keywords"></textarea></label>
+        <label>Boost keywords (animals/kids focus) <textarea name="boost_keywords"></textarea></label>
+        <label>Simple-task keywords <textarea name="simple_task_keywords"></textarea></label>
+        <label>Caution keywords (soft penalty) <textarea name="caution_keywords"></textarea></label>
+        <label>Notes <textarea name="notes"></textarea></label>
+        <button type="submit">Save preferences</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
