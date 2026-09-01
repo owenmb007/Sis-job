@@ -52,6 +52,53 @@
           <option value="new">Sort: Newest</option>
         </select>
       </div>
+      <!-- Preferences collapsible -->
+      <div class="prefs-toggle-row">
+        <button id="prefs-toggle" class="btn-prefs-toggle">⚙️ Search preferences</button>
+      </div>
+      <div id="prefs-panel" class="prefs-panel" hidden>
+        <div class="prefs-body">
+          <h3 class="prefs-heading">Search Preferences</h3>
+
+          <div class="prefs-grid">
+            <label class="prefs-field">
+              <span class="prefs-label">📍 Location</span>
+              <input id="pref-location" type="text" placeholder="Albuquerque, NM" />
+            </label>
+            <label class="prefs-field">
+              <span class="prefs-label">📏 Search radius</span>
+              <select id="pref-radius">
+                <option value="5">5 miles</option>
+                <option value="10">10 miles</option>
+                <option value="15" selected>15 miles</option>
+                <option value="25">25 miles</option>
+                <option value="40">40 miles</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="prefs-field">
+            <span class="prefs-label">🚫 Job types to block <span class="prefs-hint">(comma separated — these are always hidden from results)</span></span>
+            <textarea id="pref-exclude" rows="4" placeholder="mcdonald, burger king, gas station…"></textarea>
+          </label>
+
+          <label class="prefs-field">
+            <span class="prefs-label">💚 Boost these job types <span class="prefs-hint">(comma separated — matching jobs score higher)</span></span>
+            <textarea id="pref-boost" rows="3" placeholder="animal, pet, dog, kennel, child, kids…"></textarea>
+          </label>
+
+          <label class="prefs-field">
+            <span class="prefs-label">⚠️ Caution words <span class="prefs-hint">(comma separated — matching jobs score lower but still show)</span></span>
+            <textarea id="pref-caution" rows="3" placeholder="manager, supervisor, fast-paced…"></textarea>
+          </label>
+
+          <div class="prefs-actions">
+            <button id="prefs-save" class="btn-primary">💾 Save preferences</button>
+            <span id="prefs-status"></span>
+          </div>
+        </div>
+      </div>
+
       <div id="jobs-list" class="cards"></div>
     </section>
 

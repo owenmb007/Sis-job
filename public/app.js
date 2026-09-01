@@ -253,6 +253,72 @@ async function loadApplications() {
   });
 }
 
+// ---- Preferences ----
+let profileCache = null;
+
+function csvToArray(str) {
+  return str
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function arrayToCsv(arr) {
+  return (arr || []).join(', ');
+}
+
+function fillPrefsForm(profile) {
+  $('#pref-location').value = profile.location || '';
+  const radSel = $('#pref-radius');
+  const radius = String(profile.radius_miles || 15);
+  const opt = [...radSel.options].find((o) => o.value === radius);
+  if (opt) opt.selected = true;
+  $('#pref-exclude').value = arrayToCsv(profile.exclude_keywords);
+  $('#pref-boost').value = arrayToCsv(profile.boost_keywords);
+  $('#pref-caution').value = arrayToCsv(profile.caution_keywords);
+}
+
+$('#prefs-toggle').addEventListener('click', async () => {
+  const panel = $('#prefs-panel');
+  const btn = $('#prefs-toggle');
+  const opening = panel.hidden;
+  panel.hidden = !opening;
+  btn.classList.toggle('open', opening);
+  if (opening && !profileCache) {
+    try {
+      profileCache = await api('/profile');
+      fillPrefsForm(profileCache);
+    } catch {
+      $('#prefs-status').textContent = "Couldn't load preferences.";
+    }
+  }
+});
+
+$('#prefs-save').addEventListener('click', async () => {
+  const status = $('#prefs-status');
+  status.textContent = 'Saving…';
+  try {
+    const updated = {
+      ...profileCache,
+      location: $('#pref-location').value.trim() || profileCache.location,
+      radius_miles: Number($('#pref-radius').value),
+      exclude_keywords: csvToArray($('#pref-exclude').value),
+      boost_keywords: csvToArray($('#pref-boost').value),
+      caution_keywords: csvToArray($('#pref-caution').value),
+    };
+    profileCache = await api('/profile', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(updated),
+    });
+    fillPrefsForm(profileCache);
+    status.textContent = '✅ Saved! Hit "Find new jobs" to use the new settings.';
+    setTimeout(() => (status.textContent = ''), 4000);
+  } catch (err) {
+    status.textContent = `Couldn't save: ${err.message}`;
+  }
+});
+
 // ---- Init ----
 (async function init() {
   const resumes = await api('/resumes');
